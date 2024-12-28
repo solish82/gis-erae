@@ -70,7 +70,7 @@ export default function Map() {
         zoom={10}
         maxZoom={20}
         minZoom={10}
-        maxBounds={L.latLngBounds(L.latLng(35.47, 51.17), L.latLng(35.88, 51.63))}
+        maxBounds={L.latLngBounds(L.latLng(25.00, 44.00), L.latLng(39.00, 61.00))}
         style={{ height: "100vh", width: "100vw" }}
       >
         <TileLayer
