@@ -67,9 +67,9 @@ export default function Map() {
     <>
       <MapContainer
         center={[35.675, 51.40]}
-        zoom={10}
+        zoom={5}
         maxZoom={20}
-        minZoom={10}
+        minZoom={5}
         maxBounds={L.latLngBounds(L.latLng(25.00, 44.00), L.latLng(39.00, 61.00))}
         style={{ height: "100vh", width: "100vw" }}
       >
