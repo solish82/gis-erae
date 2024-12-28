@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useState, useRef } from "react";
-import { Box, Card, CardContent, Grid2, Typography } from "@mui/material";
+import { useState, useRef, useEffect } from "react";
+import { Box, Card, CardContent, FormControl, Grid2, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { AccessTime, LocationOn, Thermostat, Air } from "@mui/icons-material";
 import L from "leaflet";
 
@@ -20,6 +20,27 @@ export default function Map() {
   const [clickedLocation, setClickedLocation] = useState(null);
   const [temperature, setTemperature] = useState(null);
   const [windSpeed, setWindSpeed] = useState(null);
+  const [selectedTimestamp, setSelectedTimestamp] = useState(new Date('Sun, 22 Dec 2024 00:00:00 GMT'));
+
+  // Generate 24 hourly timestamps from 00:00 to 23:00
+  const generateTimestamps = () => {
+    const timestamps = [];
+    const date = new Date('Sun, 22 Dec 2024 00:00:00 GMT');
+
+    for (let i = 0; i < 24; i++) {
+      const time = new Date(date.getTime() + i * 60 * 60 * 1000); // Increment by one hour
+      timestamps.push(time.toUTCString()); // Format it as "Sun, 22 Dec 2024 00:00:00 GMT"
+    }
+
+    return timestamps;
+  };
+
+  const timestamps = generateTimestamps();
+
+  useEffect(() => {
+    setSelectedTimestamp(timestamps[0])
+  }, [])
+
   const abortControllerRef = useRef(null); // Reference to store the AbortController instance
 
   // Fetch data from the API for temperature and wind speed based on lat, long
@@ -33,7 +54,7 @@ export default function Map() {
     abortControllerRef.current = controller;  // Store it in the ref
 
     try {
-      const response = await fetch(`http://localhost:5000/location?lat=${lat.toFixed(2)}&long=${lng.toFixed(2)}`, {
+      const response = await fetch(`http://localhost:5000/location?lat=${lat.toFixed(2)}&long=${lng.toFixed(2)}&timestamp=${selectedTimestamp}`, {
         signal: controller.signal, // Pass the abort signal to the fetch request
       });
 
@@ -63,6 +84,10 @@ export default function Map() {
     fetchLocationData(lat, lng);  // Fetch data on click
   };
 
+  const handleTimestampChange = (event) => {
+    setSelectedTimestamp(event.target.value);
+  };
+
   return (
     <>
       <MapContainer
@@ -81,7 +106,7 @@ export default function Map() {
       </MapContainer>
 
       {clickedLocation && (
-        <Box sx={{ position: "absolute", top: 20, right: 20, zIndex: 1000, maxWidth: 300 }}>
+        <Box sx={{ position: "absolute", top: 100, right: 20, zIndex: 1000, maxWidth: 300, minWidth: 275 }}>
           <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -120,6 +145,21 @@ export default function Map() {
           </Card>
         </Box>
       )}
+
+      {<FormControl sx={{ position: "absolute", top: 20, right: 20, zIndex: 1000, maxWidth: 300, minWidth: 275, marginTop: 2, bgcolor: 'white' }}>
+        <InputLabel>time</InputLabel>
+        <Select
+          value={selectedTimestamp}
+          onChange={handleTimestampChange}
+          label="Timestamp"
+        >
+          {timestamps.map((timestamp, index) => (
+            <MenuItem key={index} value={timestamp}>
+              {timestamp.substring(timestamp.indexOf(":") - 2, timestamp.indexOf(":"))}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>}
     </>
   );
 }
