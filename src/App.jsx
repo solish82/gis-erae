@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useRef, useEffect } from "react";
-import { Box, Card, CardContent, FormControl, Grid2, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import { Box, Card, CardContent, CircularProgress, FormControl, Grid2, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { AccessTime, LocationOn, Thermostat, Air, ArrowUpward } from "@mui/icons-material";
 import L from "leaflet";
 
@@ -126,7 +126,7 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Temperature: {loading ? "Loading..." : `${temperature} °C`}
+                    Temperature: {loading ? <CircularProgress size={14} /> : `${temperature} °C`}
                   </Typography>
                 </Grid2>
               </Grid2>
@@ -136,7 +136,7 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Wind Speed: {loading ? "Loading..." : `${windSpeed} m/s`}
+                    Wind Speed: {loading ? <CircularProgress size={14} /> : `${windSpeed} m/s`}
                   </Typography>
                 </Grid2>
               </Grid2>
@@ -152,7 +152,7 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Wind Direction: {loading ? "Loading..." : `${windDirection}°`}
+                    Wind Direction: {loading ? <CircularProgress size={14} /> : `${windDirection}°`}
                   </Typography>
                 </Grid2>
               </Grid2>
