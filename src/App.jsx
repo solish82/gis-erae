@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useRef, useEffect } from "react";
 import { Box, Card, CardContent, FormControl, Grid2, InputLabel, MenuItem, Select, Typography } from "@mui/material";
-import { AccessTime, LocationOn, Thermostat, Air } from "@mui/icons-material";
+import { AccessTime, LocationOn, Thermostat, Air, ArrowUpward } from "@mui/icons-material";
 import L from "leaflet";
 
 function ClickEventHandler({ onClick }) {
@@ -20,16 +20,17 @@ export default function Map() {
   const [clickedLocation, setClickedLocation] = useState(null);
   const [temperature, setTemperature] = useState(null);
   const [windSpeed, setWindSpeed] = useState(null);
+  const [windDirection, setWindDirection] = useState(null); // New state for wind direction
+  const [loading, setLoading] = useState(false); // Loading state for the API
   const [selectedTimestamp, setSelectedTimestamp] = useState(new Date('Sun, 22 Dec 2024 00:00:00 GMT'));
 
-  // Generate 24 hourly timestamps from 00:00 to 23:00
   const generateTimestamps = () => {
     const timestamps = [];
     const date = new Date('Sun, 22 Dec 2024 00:00:00 GMT');
 
     for (let i = 0; i < 24; i++) {
-      const time = new Date(date.getTime() + i * 60 * 60 * 1000); // Increment by one hour
-      timestamps.push(time.toUTCString()); // Format it as "Sun, 22 Dec 2024 00:00:00 GMT"
+      const time = new Date(date.getTime() + i * 60 * 60 * 1000);
+      timestamps.push(time.toUTCString());
     }
 
     return timestamps;
@@ -38,50 +39,48 @@ export default function Map() {
   const timestamps = generateTimestamps();
 
   useEffect(() => {
-    setSelectedTimestamp(timestamps[0])
-  }, [])
+    setSelectedTimestamp(timestamps[0]);
+  }, []);
 
-  const abortControllerRef = useRef(null); // Reference to store the AbortController instance
+  const abortControllerRef = useRef(null);
 
-  // Fetch data from the API for temperature and wind speed based on lat, long
   const fetchLocationData = async (lat, lng) => {
-    // Abort the previous fetch request if it exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    const controller = new AbortController(); // Create a new AbortController
-    abortControllerRef.current = controller;  // Store it in the ref
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
+    setLoading(true); // Start loading
     try {
       const response = await fetch(`http://localhost:5000/location?lat=${lat.toFixed(2)}&long=${lng.toFixed(2)}&timestamp=${selectedTimestamp}`, {
-        signal: controller.signal, // Pass the abort signal to the fetch request
+        signal: controller.signal,
       });
 
       if (!response.ok) throw new Error('Network response was not ok');
 
       const data = await response.json();
 
-      // Parse the response data
       const tempInKelvin = data.temperature;
       const windSpeed = data.wind_speed;
+      const windDirection = data.wind_direction; // Get wind direction from API
 
-      // Convert Kelvin to Celsius
-      const tempInCelsius = tempInKelvin - 273.15;
-
-      // Update state with parsed data
-      setTemperature(tempInCelsius.toFixed(2)); // temperature in Celsius
-      setWindSpeed(windSpeed.toFixed(2)); // wind speed in m/s
+      setTemperature((tempInKelvin - 273.15).toFixed(2));
+      setWindSpeed(windSpeed.toFixed(2));
+      setWindDirection(windDirection.toFixed(0)); // Store wind direction
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error("Error fetching location data:", error);
       }
+    } finally {
+      setLoading(false); // End loading
     }
   };
 
   const handleMapClick = (lat, lng) => {
     setClickedLocation({ lat, lng });
-    fetchLocationData(lat, lng);  // Fetch data on click
+    fetchLocationData(lat, lng);
   };
 
   const handleTimestampChange = (event) => {
@@ -127,7 +126,7 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Temperature: {temperature ? `${temperature} °C` : "Loading..."}
+                    Temperature: {loading ? "Loading..." : `${temperature} °C`}
                   </Typography>
                 </Grid2>
               </Grid2>
@@ -137,7 +136,23 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Wind Speed: {windSpeed ? `${windSpeed} m/s` : "Loading..."}
+                    Wind Speed: {loading ? "Loading..." : `${windSpeed} m/s`}
+                  </Typography>
+                </Grid2>
+              </Grid2>
+              <Grid2 container spacing={1} alignItems="center" sx={{ marginTop: 2 }}>
+                <Grid2>
+                  <ArrowUpward
+                    sx={{
+                      color: "primary.main",
+                      transform: `rotate(${windDirection}deg)`, // Rotate based on wind direction
+                      transition: "transform 0.3s ease",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 xs>
+                  <Typography variant="body2">
+                    Wind Direction: {loading ? "Loading..." : `${windDirection}°`}
                   </Typography>
                 </Grid2>
               </Grid2>
@@ -146,20 +161,16 @@ export default function Map() {
         </Box>
       )}
 
-      {<FormControl sx={{ position: "absolute", top: 20, right: 20, zIndex: 1000, maxWidth: 300, minWidth: 275, marginTop: 2, bgcolor: 'white' }}>
-        <InputLabel>time</InputLabel>
-        <Select
-          value={selectedTimestamp}
-          onChange={handleTimestampChange}
-          label="Timestamp"
-        >
+      <FormControl sx={{ position: "absolute", top: 20, right: 20, zIndex: 1000, maxWidth: 300, minWidth: 275, marginTop: 2, bgcolor: 'white' }}>
+        <InputLabel>Time</InputLabel>
+        <Select value={selectedTimestamp} onChange={handleTimestampChange} label="Timestamp">
           {timestamps.map((timestamp, index) => (
             <MenuItem key={index} value={timestamp}>
               {timestamp.substring(timestamp.indexOf(":") - 2, timestamp.indexOf(":"))}
             </MenuItem>
           ))}
         </Select>
-      </FormControl>}
+      </FormControl>
     </>
   );
 }
