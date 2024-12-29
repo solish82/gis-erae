@@ -152,7 +152,7 @@ export default function Map() {
                 </Grid2>
                 <Grid2 xs>
                   <Typography variant="body2">
-                    Wind Direction: {loading ? <CircularProgress size={14} /> : `${windDirection}°`}
+                    Wind Direction: {loading ? <CircularProgress size={14} /> : `${Number(windDirection) < 0 ? Number(windDirection) + 360 : windDirection}°`}
                   </Typography>
                 </Grid2>
               </Grid2>
